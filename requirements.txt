@@ -1,4 +1,4 @@
-streamlit
-mip
-pandas
-openpyxl
+streamlit==1.27.0
+mip==1.17.0
+openpyxl==3.1.2
+pandas==2.1.1

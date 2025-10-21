@@ -8,45 +8,26 @@ import string
 
 # --- ページ設定 ---
 st.set_page_config(page_title="卓球部練習スケジュール最適化", layout="wide")
-st.title("🏓 卓球部 練習シフト最適化ツール (初期Excel付き)")
+st.title("🏓 卓球部 練習シフト最適化ツール (完全版)")
 
-# --- 初期 Excel データ生成 ---
-num_members = 5  # 初期部員数
-r_time_df = pd.DataFrame({
-    "名前": member_names,
-    "火": [2]*num_members,
-    "水": [3]*num_members,
-    "木": [4]*num_members,
-    "金": [5]*num_members
-})
-w_len_df = pd.DataFrame({"length":[1,2,3]})
-day_limits_df = pd.DataFrame({"day":["火","水","木","金"], "cheer":[True,False,False,True]})
-
-# --- Excel アップロードまたは初期値 ---
+# --- Excelアップロード ---
 uploaded_file = st.file_uploader("📂 Excelファイルをアップロードしてください", type=["xlsx"])
+if uploaded_file is None:
+    st.info("👆 Excelファイルをアップロードしてください。")
+    st.stop()
+
+# --- Workbook 読み込み ---
 tmpf = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-
-if uploaded_file is not None:
-    tmpf.write(uploaded_file.read())
-    tmpf.flush()
-    st.success("アップロードされた Excel ファイルを使用します。")
-else:
-    # 初期 Excel を書き出す
-    with pd.ExcelWriter(tmpf.name) as writer:
-        r_time_df.to_excel(writer, sheet_name="r_time", index=False)
-        w_len_df.to_excel(writer, sheet_name="w_len", index=False)
-        day_limits_df.to_excel(writer, sheet_name="day_limits", index=False)
-    tmpf.flush()
-    st.info("初期 Excel を生成しました。アップロードなしでも編集可能です。")
-
+tmpf.write(uploaded_file.read())
+tmpf.flush()
 book = load_workbook(tmpf.name)
 
-# --- r_time 編集 ---
+# --- r_timeシート表示・編集 ---
 st.subheader("🗓️ 可用性（r_time）")
 r_time_df = pd.read_excel(tmpf.name, sheet_name="r_time")
 edited_r_time = st.data_editor(r_time_df, num_rows="dynamic", key="r_time_edit")
 
-# --- day_limits 編集 ---
+# --- day_limitsシート表示・編集 ---
 st.subheader("⚙️ 曜日ごとの人数制約（day_limits）")
 day_limits_df = pd.read_excel(tmpf.name, sheet_name="day_limits")
 edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_limits_edit")
@@ -55,7 +36,7 @@ edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_l
 st.subheader("🎽 チアの日設定")
 cheer_days = st.multiselect("チアのある曜日を選択", ["火", "水", "木", "金"], default=["火", "金"])
 
-# --- 重み設定 ---
+# --- 重み設定（任意） ---
 with st.sidebar:
     st.header("重みパラメータ")
     w1 = st.number_input("授業直後スコア (w1)", value=100.0)
@@ -314,4 +295,3 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
-

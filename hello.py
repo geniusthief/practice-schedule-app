@@ -29,8 +29,8 @@ if uploaded_file is not None:
 
     # 最適化実行ボタン
     if st.button("🚀 最適化を実行"):
-        # ここに最適化処理を呼ぶ関数を入れる
-        run_optimization_from_workbook()
+    info = run_optimization_from_workbook(book)
+
         st.write("最適化を実行中...")
 
         # 仮の結果表示
@@ -43,3 +43,4 @@ if uploaded_file is not None:
 
 else:
     st.info("👆 Excelファイルをアップロードしてください。")
+

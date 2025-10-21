@@ -12,7 +12,13 @@ st.title("🏓 卓球部 練習シフト最適化ツール (初期Excel付き)")
 
 # --- 初期 Excel データ生成 ---
 num_members = 5  # 初期部員数
-r_time_df = pd.DataFrame([[2,3,4,5]]*num_members, columns=["火","水","木","金"])
+r_time_df = pd.DataFrame({
+    "名前": member_names,
+    "火": [2]*num_members,
+    "水": [3]*num_members,
+    "木": [4]*num_members,
+    "金": [5]*num_members
+})
 w_len_df = pd.DataFrame({"length":[1,2,3]})
 day_limits_df = pd.DataFrame({"day":["火","水","木","金"], "cheer":[True,False,False,True]})
 
@@ -308,3 +314,4 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+

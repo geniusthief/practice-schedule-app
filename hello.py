@@ -1,32 +1,50 @@
 import streamlit as st
-from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpInteger, LpStatus, value
+import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Font
-import string
 import tempfile
-import pandas as pd
-import io
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpInteger, LpStatus
+import string
 
-st.set_page_config(page_title="Practice Schedule Optimizer", layout="wide")
-st.title("卓球部 練習シフト最適化 (Streamlit)")
+# --- ページ設定 ---
+st.set_page_config(page_title="卓球部練習スケジュール最適化", layout="wide")
+st.title("🏓 卓球部 練習シフト最適化ツール (完全版)")
 
-st.markdown("アップロードした Excel ファイル（`r_time`, `w_len`, `day_limits` シートが必要）を読み込み、最適化を実行します。")
+# --- Excelアップロード ---
+uploaded_file = st.file_uploader("📂 Excelファイルをアップロードしてください", type=["xlsx"])
+if uploaded_file is None:
+    st.info("👆 Excelファイルをアップロードしてください。")
+    st.stop()
 
-uploaded = st.file_uploader("Excelファイルをアップロード（Book2.xlsx を使う場合は空のまま実行可）", type=["xlsx"])
-use_default = False
-if uploaded is None:
-    st.info("アップロードがない場合、同じフォルダにある 'Book2.xlsx' を探します。")
-    use_default = True
+# --- Workbook 読み込み ---
+tmpf = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+tmpf.write(uploaded_file.read())
+tmpf.flush()
+book = load_workbook(tmpf.name)
 
+# --- r_timeシート表示・編集 ---
+st.subheader("🗓️ 可用性（r_time）")
+r_time_df = pd.read_excel(tmpf.name, sheet_name="r_time")
+edited_r_time = st.data_editor(r_time_df, num_rows="dynamic", key="r_time_edit")
+
+# --- day_limitsシート表示・編集 ---
+st.subheader("⚙️ 曜日ごとの人数制約（day_limits）")
+day_limits_df = pd.read_excel(tmpf.name, sheet_name="day_limits")
+edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_limits_edit")
+
+# --- チア日選択 ---
+st.subheader("🎽 チアの日設定")
+cheer_days = st.multiselect("チアのある曜日を選択", ["火", "水", "木", "金"], default=["火", "金"])
+
+# --- 重み設定（任意） ---
 with st.sidebar:
-    st.header("重みパラメータ (任意)")
-    w1 = st.number_input("授業後スコア (w1)", value=100.0)
+    st.header("重みパラメータ")
+    w1 = st.number_input("授業直後スコア (w1)", value=100.0)
     w2 = st.number_input("連続練習スコア (w2)", value=0.5)
     w3 = st.number_input("人数スコア (w3)", value=1.0)
 
-run_button = st.button("最適化を実行")
-
-def run_optimization_from_workbook(book):
+# --- 最適化関数 ---
+def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     sheet_rt = book['r_time']
     sheet_len = book['w_len']
     sheet_day = book['day_limits']
@@ -99,7 +117,7 @@ def run_optimization_from_workbook(book):
             ideal[d] = None
             for n in N_range:
                 w_num[d][n] = 1.0
-
+            
     # 問題定義（最大化）
     prob = LpProblem("practice_schedule", LpMaximize)
 
@@ -107,9 +125,7 @@ def run_optimization_from_workbook(book):
 
     # 変数
     x = {(i, t, d): LpVariable(f"x_{i}_{t}_{d}", cat=LpBinary) for i in I for t in T for d in D}
-    # y 未使用のまま定義（元コード保持）
     y = {(t, d): LpVariable(f"y_{t}_{d}", cat=LpBinary) for t in T for d in D}
-    # z は forbidden_start を除外して作成
     z = {}
     for i in I:
         for d in D:
@@ -156,11 +172,10 @@ def run_optimization_from_workbook(book):
         for d in D:
             prob += lpSum([z[(i, s, d, l)] for s in T if s not in forbidden_start for l in L_s.get(s, []) if (i, s, d, l) in z]) <= 1
 
-    # z->x, x->z
+    # z->x
     for i in I:
         for d in D:
             for t in T:
-                # x[i,t,d] == sum z where s <= t < s+l
                 prob += x[i, t, d] == lpSum(
                     [z[(i, s, d, l)] for s in T if s not in forbidden_start for l in L_s.get(s, []) if (i, s, d, l) in z and s <= t < s + l]
                 )
@@ -187,7 +202,7 @@ def run_optimization_from_workbook(book):
                 prob += num_td[(t, d)] - n <= (1 - v[(t, d, n)]) * M
                 prob += n - num_td[(t, d)] <= (1 - v[(t, d, n)]) * M
 
-    # 目的関数の項
+    # 目的関数
     term1 = lpSum([x[i, r_time[i, d], d] for i in I for d in D if r_time[i, d] is not None and r_time[i, d] in T])
     term2 = lpSum([ (w_len[l] * z[(i, s, d, l)]) 
                     for i in I for d in D for s in T if s not in forbidden_start for l in L_s.get(s, []) 
@@ -197,7 +212,6 @@ def run_optimization_from_workbook(book):
     prob += w1 * term1 + w2 * term2 + w3 * term3
 
     # solve
-    prob.writeLP("model.lp")
     prob.solve()
 
     result_info = {"status": LpStatus[prob.status]}
@@ -207,25 +221,6 @@ def run_optimization_from_workbook(book):
         if 'result' in book.sheetnames:
             book.remove(book['result'])
         result_sheet = book.create_sheet('result')
-
-        # スコア集計（変数.value()を参照）
-        def xval(i,t,d):
-            return x[(i,t,d)].value() if (i,t,d) in x else 0
-
-        score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None and (i, r_time[i, d], d) in x)
-        score2 = sum((w_len[l] * z[(i, s, d, l)].value()) for i in I for d in D for s in T if s not in forbidden_start for l in L_s.get(s, []) if (i, s, d, l) in z)
-        score3 = sum((w_num[d][n] * v[(t, d, n)].value()) for t in T for d in D for n in N_range)
-
-        weighted1 = w1 * score1
-        weighted2 = w2 * score2
-        weighted3 = w3 * score3
-        total_score = weighted1 + weighted2 + weighted3
-
-        result_info.update({
-            'score1': score1, 'score2': score2, 'score3': score3,
-            'weighted1': weighted1, 'weighted2': weighted2, 'weighted3': weighted3,
-            'total_score': total_score
-        })
 
         weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
         for d in D:
@@ -255,50 +250,48 @@ def run_optimization_from_workbook(book):
                         cell.alignment = Alignment(wrap_text=True, horizontal='center')
                         cell.font = Font(size=12)
 
-        # 一時ファイルへ保存
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         book.save(tmp.name)
         result_info['output_path'] = tmp.name
 
+        # スコア計算
+        score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
+        score2 = sum((w_len[l] * z[(i, s, d, l)].value()) for i in I for d in D for s in T if s not in forbidden_start for l in L_s.get(s, []) if (i, s, d, l) in z)
+        score3 = sum((w_num[d][n] * v[(t, d, n)].value()) for t in T for d in D for n in N_range)
+        result_info.update({
+            'score1': score1, 'score2': score2, 'score3': score3,
+            'weighted1': w1 * score1, 'weighted2': w2 * score2, 'weighted3': w3 * score3,
+            'total_score': w1 * score1 + w2 * score2 + w3 * score3
+        })
     else:
         result_info['output_path'] = None
 
     return result_info
 
+# --- 最適化実行ボタン ---
+run_button = st.button("最適化を実行")
+
 if run_button:
-    try:
-        if use_default:
-            book = load_workbook('Book2.xlsx')
-        else:
-            tmpf = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
-            tmpf.write(uploaded.getvalue())
-            tmpf.flush()
-            book = load_workbook(tmpf.name)
+    with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
+        info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
 
-        with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
-            info = run_optimization_from_workbook(book)
+    st.subheader('最適化結果')
+    st.write('モデルステータス:', info.get('status'))
+    if info.get('output_path'):
+        st.metric('合計スコア', f"{info.get('total_score'):.2f}")
+        st.write('目的関数内訳:')
+        st.write(f"授業直後スコア: {info.get('weighted1'):.2f}")
+        st.write(f"連続練習スコア: {info.get('weighted2'):.2f}")
+        st.write(f"人数スコア: {info.get('weighted3'):.2f}")
 
-        st.subheader('最適化結果')
-        st.write('モデルステータス:', info.get('status'))
-        if info.get('output_path'):
-            st.metric('合計スコア', f"{info.get('total_score'):.2f}")
-            st.write('目的関数内訳:')
-            st.write(f"授業直後スコア: {info.get('weighted1'):.2f}")
-            st.write(f"連続練習スコア: {info.get('weighted2'):.2f}")
-            st.write(f"人数スコア: {info.get('weighted3'):.2f}")
+        df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
+        st.subheader('割当表 (result シート)')
+        st.dataframe(df)
 
-            df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
-            st.subheader('割当表 (result シート)')
-            st.dataframe(df)
-
-            with open(info['output_path'], 'rb') as f:
-                data = f.read()
-            st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
-        else:
-            st.error('実行可能な解が見つかりませんでした。')
-
-    except Exception as e:
-        st.exception(e)
+        with open(info['output_path'], 'rb') as f:
+            data = f.read()
+        st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
+    else:
+        st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
-

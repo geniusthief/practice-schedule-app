@@ -27,10 +27,10 @@ st.subheader("🗓️ 可用性（r_time）")
 r_time_df = pd.read_excel(tmpf.name, sheet_name="r_time")
 edited_r_time = st.data_editor(r_time_df, num_rows="dynamic", key="r_time_edit")
 
-# --- day_limitsシート表示・編集 ---
-st.subheader("⚙️ 曜日ごとの人数制約（day_limits）")
-day_limits_df = pd.read_excel(tmpf.name, sheet_name="day_limits")
-edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_limits_edit")
+# # --- day_limitsシート表示・編集 ---
+# st.subheader("⚙️ 曜日ごとの人数制約（day_limits）")
+# day_limits_df = pd.read_excel(tmpf.name, sheet_name="day_limits")
+# edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_limits_edit")
 
 # --- チア日選択 ---
 st.subheader("🎽 チアの日設定")
@@ -295,3 +295,4 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+

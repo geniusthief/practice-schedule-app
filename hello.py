@@ -234,8 +234,11 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions['A'].width = 12
 
+        # --- 名前リストを取得 ---
+        names_list = edited_r_time.iloc[:, 0].tolist()  # 1列目が名前列
+        
         for i in I:
-            name = labels[i - 1]
+            name = names_list[i - 1]  # ← edited_r_time の名前列から取得
             for t in T:
                 for d in D:
                     if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5:
@@ -302,6 +305,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

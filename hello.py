@@ -111,7 +111,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     N_range = list(range(3, num_members + 1))
     for d in D:
         if day_chia[d] is not None:
-            ideal[d] = (day_min[d] + day_max[d]) // 2 + 1
+            ideal[d] = 8
             for n in N_range:
                 w_num[d][n] = max(0.0, 1.0 - 0.1 * abs(n - ideal[d]))
         else:
@@ -306,6 +306,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

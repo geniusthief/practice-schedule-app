@@ -27,10 +27,10 @@ st.subheader("🗓️ 可用性（r_time）")
 r_time_df = pd.read_excel(tmpf.name, sheet_name="r_time")
 edited_r_time = st.data_editor(r_time_df, num_rows="dynamic", key="r_time_edit")
 
-# # --- day_limitsシート表示・編集 ---
-# st.subheader("⚙️ 曜日ごとの人数制約（day_limits）")
-# day_limits_df = pd.read_excel(tmpf.name, sheet_name="day_limits")
-# edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_limits_edit")
+# --- day_limitsシート表示・編集 ---
+st.subheader("⚙️ 曜日ごとの人数制約（day_limits）")
+day_limits_df = pd.read_excel(tmpf.name, sheet_name="day_limits")
+edited_day_limits = st.data_editor(day_limits_df, num_rows="dynamic", key="day_limits_edit")
 
 # --- チア日選択 ---
 st.subheader("🎽 チアの日設定")
@@ -44,7 +44,7 @@ with st.sidebar:
     w3 = st.number_input("人数スコア (w3)", value=1.0)
 
 # --- 最適化関数 ---
-def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
+def run_optimization_from_dataframe(r_time_df, day_limits_df, cheer_days, w1, w2, w3):
     sheet_rt = book['r_time']
     sheet_len = book['w_len']
     sheet_day = book['day_limits']
@@ -273,26 +273,23 @@ run_button = st.button("最適化を実行")
 
 if run_button:
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
-        info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
+        info = run_optimization_from_dataframe(edited_r_time, edited_day_limits, cheer_days, w1, w2, w3)
 
     st.subheader('最適化結果')
-    st.write('モデルステータス:', info.get('status'))
-    if info.get('output_path'):
-        st.metric('合計スコア', f"{info.get('total_score'):.2f}")
-        st.write('目的関数内訳:')
-        st.write(f"授業直後スコア: {info.get('weighted1'):.2f}")
-        st.write(f"連続練習スコア: {info.get('weighted2'):.2f}")
-        st.write(f"人数スコア: {info.get('weighted3'):.2f}")
+    st.write('モデルステータス:', info.get('status', "不明"))
+    
+    if info.get("status") == "Optimal":
+        st.metric("合計スコア", f"{info['total_score']:.2f}")
+        st.write("目的関数内訳：")
+        st.write(f"- 授業直後スコア: {info['weighted1']:.2f}")
+        st.write(f"- 連続練習スコア: {info['weighted2']:.2f}")
+        st.write(f"- 人数スコア: {info['weighted3']:.2f}")
 
-        df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
-        st.subheader('割当表 (result シート)')
-        st.dataframe(df)
-
-        with open(info['output_path'], 'rb') as f:
-            data = f.read()
-        st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
+        st.dataframe(info["result_df"])
     else:
-        st.error('実行可能な解が見つかりませんでした。')
+        st.error("実行可能な解が見つかりませんでした。")
 else:
-    st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+    st.info("準備ができたら『最適化を実行』ボタンを押してください。")
+    
+
 

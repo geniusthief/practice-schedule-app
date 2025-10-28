@@ -272,6 +272,13 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 run_button = st.button("最適化を実行")
 
 if run_button:
+    # 例: edited_r_time を sheet_rt に書き戻す
+    sheet_rt = book['r_time']
+    for i, row in edited_r_time.iterrows():
+        # row[0] が名前列ならスキップしてここは1列目を想定
+        for j, val in enumerate(row, start=1):  # Excel の2列目から時間データが始まる想定
+            sheet_rt.cell(row=i+1, column=j).value = val
+
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
         info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
 
@@ -295,3 +302,4 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+

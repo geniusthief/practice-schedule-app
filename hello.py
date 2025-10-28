@@ -102,7 +102,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             day_min[d] = 2
             day_max[d] = 9
         else:
-            day_min[d] = 3
+            day_min[d] = 2
             day_max[d] = 18
 
     # ideal / w_num
@@ -306,6 +306,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

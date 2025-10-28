@@ -5,10 +5,23 @@ from openpyxl.styles import Alignment, Font
 import tempfile
 from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpInteger, LpStatus
 import string
+import gspread
+from google.oauth2.service_account import Credentials
+import io
 
 # --- ページ設定 ---
 st.set_page_config(page_title="卓球部練習スケジュール最適化", layout="wide")
 st.title("🏓 卓球部 練習シフト最適化ツール (完全版)")
+
+# --- Google Drive 認証 ---
+SCOPES = ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets"]
+# サービスアカウント JSON をアップロードさせる
+st.sidebar.header("Google Drive 認証")
+service_account_file = st.sidebar.file_uploader("サービスアカウント JSON をアップロード", type=["json"])
+gc = None
+if service_account_file:
+    creds = Credentials.from_service_account_info(service_account_file.read(), scopes=SCOPES)
+    gc = gspread.authorize(creds)
 
 # --- Excelアップロード ---
 uploaded_file = st.file_uploader("📂 Excelファイルをアップロードしてください", type=["xlsx"])
@@ -307,6 +320,16 @@ if run_button:
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
 
+# --- Google Drive 保存 ---
+    if gc:
+        st.info("Google Drive に保存中...")
+        try:
+            drive_file_name = "practice_result.xlsx"
+            sh = gc.create(drive_file_name)
+            sh.sheet1.update([df.columns.values.tolist()] + df.values.tolist())
+            st.success("Google Drive に保存しました！")
+        except Exception as e:
+            st.error(f"Google Drive 保存失敗: {e}")
 
 
 

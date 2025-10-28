@@ -88,15 +88,16 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     # w_len 読み込み
     w_len = {l: sheet_len.cell(row=l + 1, column=2).value for l in L}
 
-    # day_limits の読み込み（チアの有無）
+    # --- day_chia の作成（day_limits シート不要） ---
+    weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
     day_chia = {}
-    for d in D:
-        day_chia[d] = sheet_day.cell(row=d+1, column=2).value
+    for d in range(1, 5):
+        day_chia[d] = weekday_map[d] in cheer_days
 
     # min/max
     day_min = {}
     day_max = {}
-    for d in D:
+    for d in range(1, 5):
         if day_chia[d]:
             day_min[d] = 3
             day_max[d] = 8
@@ -305,6 +306,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

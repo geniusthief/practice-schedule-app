@@ -10,32 +10,17 @@ import string
 st.set_page_config(page_title="卓球部練習スケジュール最適化", layout="wide")
 st.title("🏓 卓球部 練習シフト最適化ツール (完全版)")
 
-# --- 前回結果アップロード（サイドバー） ---
-with st.sidebar:
-    st.subheader("📂 前回結果アップロード（任意）")
-    uploaded_result = st.file_uploader("前回の割当表をアップロード", type=["xlsx"], key="prev_result")
+# --- Excelアップロード ---
+uploaded_file = st.file_uploader("📂 Excelファイルをアップロードしてください", type=["xlsx"])
+if uploaded_file is None:
+    st.info("👆 Excelファイルをアップロードしてください。")
+    st.stop()
 
-prev_r_time_df = None
-prev_cheer_days = None
-if uploaded_result is not None:
-    try:
-        prev_r_time_df = pd.read_excel(uploaded_result, sheet_name='r_time')
-        st.sidebar.subheader("📄 前回結果プレビュー")
-        st.sidebar.dataframe(prev_r_time_df)
-        
-        # チア日が result シートに保存されている場合に読み込み
-        # 今は例として result の1行目をチェック
-        prev_book = load_workbook(uploaded_result)
-        if 'result' in prev_book.sheetnames:
-            # シートの1行目からチア日を推定（火・水・木・金が列順）
-            result_sheet = prev_book['result']
-            prev_cheer_days = []
-            for col, weekday in enumerate(["火", "水", "木", "金"], start=2):
-                cell_value = result_sheet.cell(row=1, column=col).value
-                if cell_value:  # 値が入っていればチア日として扱う
-                    prev_cheer_days.append(weekday)
-    except Exception as e:
-        st.sidebar.error(f"前回結果の読み込みに失敗しました: {e}")
+# --- Workbook 読み込み ---
+tmpf = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+tmpf.write(uploaded_file.read())
+tmpf.flush()
+book = load_workbook(tmpf.name)
 
 # --- r_timeシート表示・編集 ---
 st.subheader("🗓️ 可用性（r_time）")
@@ -321,4 +306,16 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
+
+
+
+
+
+
+
+
+
+
+
 

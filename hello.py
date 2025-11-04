@@ -272,6 +272,20 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 
     return result_info
 
+# --- 最適化ボタンの直前で book を更新する ---
+sheet_rt = book['r_time']
+
+# シートを全消去してから書き直す（行削除後のずれ防止）
+for row in sheet_rt.iter_rows(min_row=2, max_row=sheet_rt.max_row):
+    for cell in row:
+        cell.value = None
+
+# 編集結果を書き戻す
+for i, row in edited_r_time.iterrows():
+    for j, val in enumerate(row):
+        sheet_rt.cell(row=i+2, column=j+1).value = val
+
+
 # --- 最適化実行ボタン ---
 run_button = st.button("最適化を実行")
 
@@ -306,6 +320,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

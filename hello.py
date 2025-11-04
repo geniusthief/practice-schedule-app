@@ -222,8 +222,6 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         if 'result' in book.sheetnames:
             book.remove(book['result'])
         result_sheet = book.create_sheet('result')
-
-        
         weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
         for d in D:
             cell = result_sheet.cell(row=1, column=1 + d)

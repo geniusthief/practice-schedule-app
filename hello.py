@@ -223,15 +223,23 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             book.remove(book['result'])
         result_sheet = book.create_sheet('result')
 
+        # --- 時間帯→表示ラベルの対応表 ---
+        time_labels = {
+            1: "2限バス（13時）",
+            3: "3限バス（15時）",
+            5: "4限バス（17時）",
+            7: "5限バス（19時）"
+        }
         weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
         for d in D:
             cell = result_sheet.cell(row=1, column=1 + d)
             cell.value = f"{weekday_map[d]}曜"
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions[cell.column_letter].width = 20
-        for t in T:
-            cell = result_sheet.cell(row=1 + t, column=1)
-            cell.value = f"{12 + t}時"
+        row_index = 2  # Excel上の2行目から開始
+        for t in [1, 3, 5, 7]:  # 表示する時間のみ
+            cell = result_sheet.cell(row=row_index, column=1)
+            cell.value = time_labels[t]
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions['A'].width = 12
 
@@ -331,6 +339,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

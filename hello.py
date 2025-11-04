@@ -277,12 +277,26 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 run_button = st.button("最適化を実行")
 
 if run_button:
-    # 例: edited_r_time を sheet_rt に書き戻す
-    sheet_rt = book['r_time']
-    for i, row in edited_r_time.iterrows():
-        # row[0] が名前列ならスキップしてここは1列目を想定
-        for j, val in enumerate(row, start=1):  # Excel の2列目から時間データが始まる想定
-            sheet_rt.cell(row=i+2, column=j).value = val
+    # --- edited_r_time を sheet に完全に反映（削除して再作成） ---
+    if "r_time" in book.sheetnames:
+        book.remove(book["r_time"])
+
+    sheet_rt = book.create_sheet("r_time")
+
+    # 1行目に列名を書き込む（DataFrame の列名をそのまま）
+    for j, col_name in enumerate(edited_r_time.columns, start=1):
+        sheet_rt.cell(row=1, column=j, value=str(col_name))
+
+    # データ本体を書き込み（2行目以降）
+    for i, row in enumerate(edited_r_time.itertuples(index=False), start=2):
+        for j, val in enumerate(row, start=1):
+            sheet_rt.cell(row=i, column=j, value=val)
+    # # 例: edited_r_time を sheet_rt に書き戻す
+    # sheet_rt = book['r_time']
+    # for i, row in edited_r_time.iterrows():
+    #     # row[0] が名前列ならスキップしてここは1列目を想定
+    #     for j, val in enumerate(row, start=1):  # Excel の2列目から時間データが始まる想定
+    #         sheet_rt.cell(row=i+2, column=j).value = val
 
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
         info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
@@ -307,6 +321,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

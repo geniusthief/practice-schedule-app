@@ -218,21 +218,53 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     result_info = {"status": LpStatus[prob.status]}
 
     # 結果出力
-    if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
-        if 'result' in book.sheetnames:
-            book.remove(book['result'])
-        result_sheet = book.create_sheet('result')
-        weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
+    # --- 結果出力（表示行を 4 行に絞る＆ラベルを変更） ---
+    weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
+
+    # 1行目：曜日ヘッダ（A1は空欄にしておく）
+    result_sheet.cell(row=1, column=1, value="時間／項目")
+    for d in D:
+        result_sheet.cell(row=1, column=1 + d, value=f"{weekday_map[d]}曜")
+        result_sheet.cell(row=1, column=1 + d).alignment = Alignment(horizontal='center')
+        result_sheet.column_dimensions[result_sheet.cell(row=1, column=1 + d).column_letter].width = 20
+
+    # 表示する時間（内部 t 値）と表示ラベルの対応（順序どおり）
+    display_times = [
+        (1, "2限バス（13時）"),  # t=1 (13時)
+        (3, "3限バス（15時）"),  # t=3 (15時)
+        (5, "4限バス（17時）"),  # t=5 (17時)
+        (7, "5限バス（19時）")   # t=7 (19時)
+    ]
+
+    # 名前リスト（edited_r_time の1列目を想定）
+    names_list = edited_r_time.iloc[:, 0].astype(str).tolist()
+
+    # 2行目以降に順に表示（row_index を明示的に管理）
+    row_index = 2
+    for t_val, label in display_times:
+        # 時間ラベルを書き込む（A列）
+        c = result_sheet.cell(row=row_index, column=1)
+        c.value = label
+        c.alignment = Alignment(horizontal='center')
+        result_sheet.row_dimensions[row_index].height = 28
+
+        # 各曜日にその時間帯の割当名を入れる
         for d in D:
-            cell = result_sheet.cell(row=1, column=1 + d)
-            cell.value = f"{weekday_map[d]}曜"
-            cell.alignment = Alignment(horizontal='center')
-            result_sheet.column_dimensions[cell.column_letter].width = 20
-        for t in T:
-            cell = result_sheet.cell(row=1 + t, column=1)
-            cell.value = f"{12 + t}時"
-            cell.alignment = Alignment(horizontal='center')
-            result_sheet.column_dimensions['A'].width = 12
+            names = []
+            for i in I:
+                # x の (i,t,d) が存在して 1 ならその人を追加
+                if (i, t_val, d) in x and x[(i, t_val, d)].value() is not None and x[(i, t_val, d)].value() >= 0.5:
+                    # names_list の長さチェックを入れて安全に取得
+                    if i - 1 < len(names_list):
+                        names.append(names_list[i - 1])
+                    else:
+                        names.append(f"#{i}")  # 保険：名前が足りない場合は番号で埋める
+            if names:
+                cell_td = result_sheet.cell(row=row_index, column=1 + d)
+                cell_td.value = ", ".join(names)
+                cell_td.alignment = Alignment(wrap_text=True, horizontal='center')
+                cell_td.font = Font(size=12)
+        row_index += 1
 
         # --- 名前リストを取得 ---
         names_list = edited_r_time.iloc[:, 0].tolist()  # 1列目が名前列
@@ -330,6 +362,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

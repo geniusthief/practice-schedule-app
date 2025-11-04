@@ -230,7 +230,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             result_sheet.column_dimensions[cell.column_letter].width = 20
         for t in T:
             cell = result_sheet.cell(row=1 + t, column=1)
-            cell.value = f"{12 + t}時
+            cell.value = f"{12 + t}時"
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions['A'].width = 12
 
@@ -330,6 +330,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

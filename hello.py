@@ -277,19 +277,35 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 run_button = st.button("最適化を実行")
 
 if run_button:
-    # --- edited_r_time を sheet に完全に反映（削除して再作成） ---
+    # --- edited_r_time を安全にクリーニングして sheet に反映（削除・追加どちらでも対応） ---
+    clean_df = edited_r_time.copy()
+
+    # 1) 名前列の列名を取得（最左列が名前である前提）
+    name_col = clean_df.columns[0]
+
+    # 2) 名前列の余分な空白除去・文字列化
+    clean_df[name_col] = clean_df[name_col].astype(str).str.strip()
+
+    # 3) 空文字 / 'nan' / 'None' に相当する行を削除
+    mask_valid = (~clean_df[name_col].isna()) & (clean_df[name_col] != "") & (clean_df[name_col].str.lower() != "nan") & (clean_df[name_col].str.lower() != "none")
+    clean_df = clean_df[mask_valid].reset_index(drop=True)
+
+    # 4) その他の列も NaN を None に（openpyxl 書き込み時の扱いを安定させる）
+    clean_df = clean_df.where(pd.notnull(clean_df), None)
+
+    # 5) 元の r_time シートを消して再作成（完全上書き）
     if "r_time" in book.sheetnames:
         book.remove(book["r_time"])
-
     sheet_rt = book.create_sheet("r_time")
 
-    # 1行目に列名を書き込む（DataFrame の列名をそのまま）
-    for j, col_name in enumerate(edited_r_time.columns, start=1):
+    # 6) ヘッダ行を書き込む（DataFrame のカラム名をそのまま）
+    for j, col_name in enumerate(clean_df.columns, start=1):
         sheet_rt.cell(row=1, column=j, value=str(col_name))
 
-    # データ本体を書き込み（2行目以降）
-    for i, row in enumerate(edited_r_time.itertuples(index=False), start=2):
+    # 7) データ本体を書き込み（2行目以降）
+    for i, row in enumerate(clean_df.itertuples(index=False), start=2):
         for j, val in enumerate(row, start=1):
+            # None はそのまま None（空セル）
             sheet_rt.cell(row=i, column=j, value=val)
     # # 例: edited_r_time を sheet_rt に書き戻す
     # sheet_rt = book['r_time']
@@ -321,6 +337,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

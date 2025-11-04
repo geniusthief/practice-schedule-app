@@ -272,18 +272,21 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 
     return result_info
 
-# --- 最適化ボタンの直前で book を更新する ---
-sheet_rt = book['r_time']
+# --- r_timeシートの再構築（削除＋再作成） ---
+if "r_time" in book.sheetnames:
+    std = book["r_time"]
+    book.remove(std)
 
-# シートを全消去してから書き直す（行削除後のずれ防止）
-for row in sheet_rt.iter_rows(min_row=2, max_row=sheet_rt.max_row):
-    for cell in row:
-        cell.value = None
+sheet_rt = book.create_sheet("r_time")
 
-# 編集結果を書き戻す
-for i, row in edited_r_time.iterrows():
-    for j, val in enumerate(row):
-        sheet_rt.cell(row=i+2, column=j+1).value = val
+# DataFrameの列名を1行目に書く
+for j, col_name in enumerate(edited_r_time.columns, start=1):
+    sheet_rt.cell(row=1, column=j, value=col_name)
+
+# データ本体を書き込み
+for i, row in enumerate(edited_r_time.itertuples(index=False), start=2):
+    for j, val in enumerate(row, start=1):
+        sheet_rt.cell(row=i, column=j, value=val)
 
 
 # --- 最適化実行ボタン ---
@@ -320,6 +323,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

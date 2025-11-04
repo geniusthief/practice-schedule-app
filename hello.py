@@ -8,7 +8,7 @@ import string
 
 # --- ページ設定 ---
 st.set_page_config(page_title="卓球部練習スケジュール最適化", layout="wide")
-st.title("🏓 卓球部 練習シフト最適化ツール (完全版)")
+st.title("🏓 卓球部 練習シフト最適化ツール")
 
 # --- Excelアップロード ---
 uploaded_file = st.file_uploader("📂 Excelファイルをアップロードしてください", type=["xlsx"])
@@ -331,6 +331,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

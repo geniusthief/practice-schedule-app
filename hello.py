@@ -349,57 +349,6 @@ if run_button:
     st.write(clean_df.head())
     book.save(tmp_rewrite.name)
     book = load_workbook(tmp_rewrite.name)
-
-    st.subheader("🔍 デバッグ情報")
-    st.write("各部員の希望開始時間（r_time）と可用性マップ（a[i,t,d]）を表示")
-
-    # --- run_optimization_from_workbook にデバッグ表示を組み込む ---
-    def run_optimization_with_debug(book, cheer_days, w1, w2, w3):
-        info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
-
-        # 可用性の確認
-        sheet_rt = book['r_time']
-        num_members = len([cell.value for cell in sheet_rt['A'][1:] if cell.value is not None])
-        I = list(range(1, num_members + 1))
-        T = list(range(1, 9))
-        D = list(range(1, 5))
-
-        # r_time の読み込み
-        r_time = {}
-        for i in I:
-            for d in D:
-                val = sheet_rt.cell(row=i+1, column=d+1).value
-                r_time[i, d] = val
-
-        st.write("r_time（部員ごとの開始時間）:")
-        st.write(r_time)
-
-        # 可用性 a[i,t,d] を作る
-        a = {}
-        for i in I:
-            for d in D:
-                start = r_time[i, d]
-                for t in T:
-                    a[i, t, d] = 0
-                if start:
-                    for t in range(start, 9):
-                        a[i, t, d] = 1
-
-        st.write("availability a[i,t,d]（1=可、0=不可）:")
-        for i in I:
-            for d in D:
-                st.write(f"部員{i}、曜日{d}: {[a[i, t, d] for t in T]}")
-
-        # 各時間帯の可能人数
-        day_min = {1: 2, 2: 2, 3: 2, 4: 2}
-        day_max = {1: 9, 2: 18, 3: 18, 4: 9}  # 適当にデバッグ用
-        st.write("各時間帯の可能人数 vs day_min/day_max")
-        for t in T:
-            for d in D:
-                possible = sum(a[i, t, d] for i in I)
-                st.write(f"時間{t}、曜日{d}：可能人数={possible} (min={day_min[d]}, max={day_max[d]})")
-
-        return info
     
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
         info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
@@ -424,6 +373,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

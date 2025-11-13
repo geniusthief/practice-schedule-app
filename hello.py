@@ -343,6 +343,12 @@ if run_button:
             # None はそのまま None（空セル）
             sheet_rt.cell(row=i, column=j, value=val)
 
+    # ✅ 8) 変更を確実に反映させるため、一時保存＆再読み込み
+    import tempfile
+    tmp_rewrite = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+    book.save(tmp_rewrite.name)
+    book = load_workbook(tmp_rewrite.name)
+
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
         info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
 
@@ -366,6 +372,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

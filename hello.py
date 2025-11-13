@@ -216,22 +216,6 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     prob.solve()
 
     result_info = {"status": LpStatus[prob.status]}
-
-    # --- 実行不可の場合のアドバイス ---
-    possible_counts = {}
-    for t in T:
-        for d in D:
-            possible_counts[t, d] = sum(a[i, t, d] for i in I)
-
-    advice = []
-    time_map_display = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
-    for t in T:
-        for d in D:
-            if possible_counts[t, d] < day_min[d]:
-                advice.append(f"{weekday_map[d]} {time_map_display.get(t, t+12)}: 人数不足 → 調整してください")
-            elif possible_counts[t, d] > day_max[d]:
-                advice.append(f"{weekday_map[d]} {time_map_display.get(t, t+12)}: 人数超過 → 調整してください")
-
     
     # 結果出力
     if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
@@ -308,11 +292,6 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         book.save(tmp.name)
         result_info['output_path'] = tmp.name
-    else:
-        result_info['output_path'] = None
-        result_info['advice'] = advice
-
-    return result_info
 
         # スコア計算
         score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
@@ -324,8 +303,22 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             'total_score': w1 * score1 + w2 * score2 + w3 * score3
         })
     else:
+        # --- 解がない場合の処理 ---
         result_info['output_path'] = None
+        possible_counts = {}
+        for t in T:
+            for d in D:
+                possible_counts[t, d] = sum(a[i, t, d] for i in I)
 
+        advice = []
+        time_map_display = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
+        for t in T:
+            for d in D:
+                if possible_counts[t, d] < day_min[d]:
+                    advice.append(f"{weekday_map[d]} {time_map_display.get(t, t+12)}: 人数不足 → 調整してください")
+                elif possible_counts[t, d] > day_max[d]:
+                    advice.append(f"{weekday_map[d]} {time_map_display.get(t, t+12)}: 人数超過 → 調整してください")
+        result_info['advice'] = advice
     return result_info
 
 
@@ -398,6 +391,7 @@ if run_button:
                 st.write(a)
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

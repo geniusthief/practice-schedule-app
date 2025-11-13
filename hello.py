@@ -228,11 +228,19 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             cell.value = f"{weekday_map[d]}曜"
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions[cell.column_letter].width = 20
-        for t in T:
-            cell = result_sheet.cell(row=1 + t, column=1)
-            cell.value = f"{12 + t}時"
+            
+        limit_labels = ["2限", "3限", "4限", "5限"]
+        valid_t = [1, 3, 5, 7]  # 13,15,17,19時に対応
+        for idx, t in enumerate(valid_t):
+            cell = result_sheet.cell(row=2 + idx, column=1)
+            cell.value = limit_labels[idx]
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions['A'].width = 12
+        # for t in T:
+        #     cell = result_sheet.cell(row=1 + t, column=1)
+        #     cell.value = f"{12 + t}時"
+        #     cell.alignment = Alignment(horizontal='center')
+        #     result_sheet.column_dimensions['A'].width = 12
 
 
         # --- 名前リストを取得 ---
@@ -331,6 +339,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

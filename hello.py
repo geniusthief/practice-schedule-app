@@ -216,7 +216,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     prob.solve()
 
     result_info = {"status": LpStatus[prob.status]}
-    
+
     # 結果出力
     if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
         if 'result' in book.sheetnames:
@@ -303,22 +303,8 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             'total_score': w1 * score1 + w2 * score2 + w3 * score3
         })
     else:
-        # --- 解がない場合の処理 ---
         result_info['output_path'] = None
-        possible_counts = {}
-        for t in T:
-            for d in D:
-                possible_counts[t, d] = sum(a[i, t, d] for i in I)
 
-        advice = []
-        time_map_display = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
-        for t in T:
-            for d in D:
-                if possible_counts[t, d] < day_min[d]:
-                    advice.append(f"{weekday_map[d]} {time_map_display.get(t, t+12)}: 人数不足 → 調整してください")
-                elif possible_counts[t, d] > day_max[d]:
-                    advice.append(f"{weekday_map[d]} {time_map_display.get(t, t+12)}: 人数超過 → 調整してください")
-        result_info['advice'] = advice
     return result_info
 
 
@@ -338,6 +324,9 @@ if run_button:
     # 3) 空文字 / 'nan' / 'None' に相当する行を削除
     mask_valid = (~clean_df[name_col].isna()) & (clean_df[name_col] != "") & (clean_df[name_col].str.lower() != "nan") & (clean_df[name_col].str.lower() != "none")
     clean_df = clean_df[mask_valid].reset_index(drop=True)
+
+    for col in clean_df.columns[1:]:
+        clean_df[col] = pd.to_numeric(clean_df[col], errors='coerce')
 
     # 4) その他の列も NaN を None に（openpyxl 書き込み時の扱いを安定させる）
     clean_df = clean_df.where(pd.notnull(clean_df), None)
@@ -363,7 +352,7 @@ if run_button:
     st.write(clean_df.head())
     book.save(tmp_rewrite.name)
     book = load_workbook(tmp_rewrite.name)
-    
+
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
         info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
 
@@ -385,16 +374,8 @@ if run_button:
         st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
     else:
         st.error('実行可能な解が見つかりませんでした。')
-        if 'advice' in info:
-            st.subheader("改善アドバイス")
-            for a in info['advice']:
-                st.write(a)
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
-
-
-
-
 
 
 

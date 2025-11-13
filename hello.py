@@ -325,6 +325,9 @@ if run_button:
     mask_valid = (~clean_df[name_col].isna()) & (clean_df[name_col] != "") & (clean_df[name_col].str.lower() != "nan") & (clean_df[name_col].str.lower() != "none")
     clean_df = clean_df[mask_valid].reset_index(drop=True)
 
+    for col in clean_df.columns[1:]:
+        clean_df[col] = pd.to_numeric(clean_df[col], errors='coerce')
+
     # 4) その他の列も NaN を None に（openpyxl 書き込み時の扱いを安定させる）
     clean_df = clean_df.where(pd.notnull(clean_df), None)
 
@@ -373,6 +376,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

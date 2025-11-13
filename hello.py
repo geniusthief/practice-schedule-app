@@ -308,6 +308,11 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         book.save(tmp.name)
         result_info['output_path'] = tmp.name
+    else:
+        result_info['output_path'] = None
+        result_info['advice'] = advice
+
+    return result_info
 
         # スコア計算
         score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
@@ -387,8 +392,13 @@ if run_button:
         st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
     else:
         st.error('実行可能な解が見つかりませんでした。')
+        if 'advice' in info:
+            st.subheader("改善アドバイス")
+            for a in info['advice']:
+                st.write(a)
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

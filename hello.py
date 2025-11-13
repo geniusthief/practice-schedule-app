@@ -248,7 +248,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         
         for i in I:
             name = names_list[i - 1]  # ← edited_r_time の名前列から取得
-            for t in T
+            for t in T:
                 for d in D:
                     if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5:
                         row = 1 + t
@@ -339,6 +339,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

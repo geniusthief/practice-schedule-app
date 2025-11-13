@@ -122,7 +122,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     # 問題定義（最大化）
     prob = LpProblem("practice_schedule", LpMaximize)
 
-    forbidden_start = [4, 6, 8]  # 16時,18時,20時
+    forbidden_start = [2, 4, 6, 8]  # 14時,16時,18時,20時
 
     # 変数
     x = {(i, t, d): LpVariable(f"x_{i}_{t}_{d}", cat=LpBinary) for i in I for t in T for d in D}
@@ -339,6 +339,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

@@ -346,6 +346,7 @@ if run_button:
     # ✅ 8) 変更を確実に反映させるため、一時保存＆再読み込み
     import tempfile
     tmp_rewrite = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+    st.write(clean_df.head())
     book.save(tmp_rewrite.name)
     book = load_workbook(tmp_rewrite.name)
 
@@ -372,6 +373,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

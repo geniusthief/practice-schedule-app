@@ -45,6 +45,16 @@ with st.sidebar:
 
 # --- 最適化関数 ---
 def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
+    # --- デバッグ用 ---
+    st.subheader("可用性デバッグ")
+    st.write("r_time マップ (各部員・曜日の開始時間):")
+    st.write(r_time)
+
+    st.write("availability a[i,t,d] (1=可能,0=不可):")
+    for i in I:
+        for d in D:
+            st.write(f"部員{i}、曜日{d}:", [a[i, t, d] for t in T])
+    
     sheet_rt = book['r_time']
     sheet_len = book['w_len']
     sheet_day = book['day_limits']
@@ -376,4 +386,5 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 

@@ -122,7 +122,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     # 問題定義（最大化）
     prob = LpProblem("practice_schedule", LpMaximize)
 
-    forbidden_start = [4, 6, 8]  # 16時,18時,20時
+    forbidden_start = [2, 4, 6, 8]  # 14時,16時,18時,20時
 
     # 変数
     x = {(i, t, d): LpVariable(f"x_{i}_{t}_{d}", cat=LpBinary) for i in I for t in T for d in D}
@@ -228,30 +228,66 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             cell.value = f"{weekday_map[d]}曜"
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions[cell.column_letter].width = 20
-        for t in T:
-            cell = result_sheet.cell(row=1 + t, column=1)
-            cell.value = f"{12 + t}時"
+            
+        time_map = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
+        display_rows = [1, 3, 5, 7]
+        for i, t in enumerate(display_rows, start=2):
+            cell = result_sheet.cell(row=i, column=1)
+            cell.value = time_map[t]
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions['A'].width = 12
+        # for t in T:
+        #     cell = result_sheet.cell(row=1 + t, column=1)
+        #     cell.value = f"{12 + t}時"
+        #     cell.alignment = Alignment(horizontal='center')
+        #     result_sheet.column_dimensions['A'].width = 12
+
 
         # --- 名前リストを取得 ---
         names_list = edited_r_time.iloc[:, 0].tolist()  # 1列目が名前列
-        
-        for i in I:
-            name = names_list[i - 1]  # ← edited_r_time の名前列から取得
-            for t in T:
-                for d in D:
-                    if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5:
-                        row = 1 + t
-                        col = 1 + d
-                        cell = result_sheet.cell(row=row, column=col)
-                        prev = cell.value if cell.value else ''
-                        names = prev.split(',') if prev else []
-                        if name not in names:
-                            names.append(name)
-                        cell.value = ",".join(names)
-                        cell.alignment = Alignment(wrap_text=True, horizontal='center')
-                        cell.font = Font(size=12)
+
+        # --- 同じ曜日では一度だけ名前を表示する ---
+        for d in D:
+            for i in I:
+                name = names_list[i - 1]
+
+                # 部員 i がこの曜日 d に出る時間帯（奇数時のみ）
+                active_times = [
+                    t for t in display_rows
+                    if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5
+                ]
+
+                if not active_times:
+                    continue
+
+                # その曜日で最も早い時間にだけ表示
+                first_t = min(active_times)
+                row = 1 + display_rows.index(first_t) + 1
+                col = 1 + d
+                cell = result_sheet.cell(row=row, column=col)
+                prev = cell.value if cell.value else ''
+                names = prev.split(',') if prev else []
+                if name not in names:
+                    names.append(name)
+                cell.value = ",".join(names)
+                cell.alignment = Alignment(wrap_text=True, horizontal='center')
+                cell.font = Font(size=12)
+
+        # for i in I:
+        #     name = names_list[i - 1]  # ← edited_r_time の名前列から取得
+        #     for t in display_rows:  # ← 偶数時を除外
+        #         for d in D:
+        #             if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5:
+        #                 row = 1 + display_rows.index(t) + 1  # 2限がrow=2, 3限がrow=3 ...
+        #                 col = 1 + d
+        #                 cell = result_sheet.cell(row=row, column=col)
+        #                 prev = cell.value if cell.value else ''
+        #                 names = prev.split(',') if prev else []
+        #                 if name not in names:
+        #                     names.append(name)
+        #                 cell.value = ",".join(names)
+        #                 cell.alignment = Alignment(wrap_text=True, horizontal='center')
+        #                 cell.font = Font(size=12)
 
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         book.save(tmp.name)
@@ -289,6 +325,9 @@ if run_button:
     mask_valid = (~clean_df[name_col].isna()) & (clean_df[name_col] != "") & (clean_df[name_col].str.lower() != "nan") & (clean_df[name_col].str.lower() != "none")
     clean_df = clean_df[mask_valid].reset_index(drop=True)
 
+    for col in clean_df.columns[1:]:
+        clean_df[col] = pd.to_numeric(clean_df[col], errors='coerce')
+
     # 4) その他の列も NaN を None に（openpyxl 書き込み時の扱いを安定させる）
     clean_df = clean_df.where(pd.notnull(clean_df), None)
 
@@ -306,6 +345,13 @@ if run_button:
         for j, val in enumerate(row, start=1):
             # None はそのまま None（空セル）
             sheet_rt.cell(row=i, column=j, value=val)
+
+    # ✅ 8) 変更を確実に反映させるため、一時保存＆再読み込み
+    import tempfile
+    tmp_rewrite = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+    st.write(clean_df.head())
+    book.save(tmp_rewrite.name)
+    book = load_workbook(tmp_rewrite.name)
 
     with st.spinner('最適化モデルを作成・解いています...（数秒〜数分かかる場合があります）'):
         info = run_optimization_from_workbook(book, cheer_days, w1, w2, w3)
@@ -330,12 +376,4 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
-
-
-
-
-
-
-
-
 

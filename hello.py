@@ -292,22 +292,25 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         book.save(tmp.name)
         return tmp.name
 
-        # スコア計算
-        score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
-        score2 = sum((w_len[l] * z[(i, s, d, l)].value()) for i in I for d in D for s in T if s not in forbidden_start for l in L_s.get(s, []) if (i, s, d, l) in z)
-        score3 = sum((w_num[d][n] * v[(t, d, n)].value()) for t in T for d in D for n in N_range)
-        result_info.update({
-            'score1': score1, 'score2': score2, 'score3': score3,
-            'weighted1': w1 * score1, 'weighted2': w2 * score2, 'weighted3': w3 * score3,
-            'total_score': w1 * score1 + w2 * score2 + w3 * score3
-        })
 
     # --- 最適化成功なら通常出力 ---
     if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
-        result_info['output_path'] = write_result_sheet(x_vars=x)
+        output_path = write_result_sheet(x_vars=x)
+        # スコア計算
+        score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
+        score2 = sum((w_len[l] * z[(i, s, d, l)].value()) 
+                     for i in I for d in D for s in T if s not in forbidden_start 
+                     for l in L_s.get(s, []) if (i, s, d, l) in z)
+        score3 = sum((w_num[d][n] * v[(t, d, n)].value()) for t in T for d in D for n in N_range)
+        result_info.update({
+            'output_path': output_path,
+            'score1': score1, 'score2': score2, 'score3': score3,
+            'weighted1': w1 * score1, 'weighted2': w2 * score2, 'weighted3': w3 * score3,
+            'total_score': w1 * score1 + w2 * score2 + w3 * score3
+        ])
     else:
         # --- fallback: 可用性通り出力 ---
-        result_info['output_path'] = write_result_sheet(x_vars=x, fallback=True)
+        output_path = write_result_sheet(x_vars=x, fallback=True)
 
     return result_info
 
@@ -380,5 +383,6 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 

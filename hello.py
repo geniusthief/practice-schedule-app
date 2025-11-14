@@ -362,21 +362,23 @@ if run_button:
     st.subheader('最適化結果')
     st.write('モデルステータス:', info.get('status'))
     if info.get('output_path'):
-        st.metric('合計スコア', f"{info.get('total_score'):.2f}")
-        st.write('目的関数内訳:')
-        st.write(f"授業直後スコア: {info.get('weighted1'):.2f}")
-        st.write(f"連続練習スコア: {info.get('weighted2'):.2f}")
-        st.write(f"人数スコア: {info.get('weighted3'):.2f}")
-
         df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
         st.subheader('割当表 (result シート)')
         st.dataframe(df)
-
         with open(info['output_path'], 'rb') as f:
             data = f.read()
         st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
+
+        # 最適化成功ならスコアを表示
+        if info.get('status') in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
+            st.metric('合計スコア', f"{info.get('total_score'):.2f}")
+            st.write('目的関数内訳:')
+            st.write(f"授業直後スコア: {info.get('weighted1'):.2f}")
+            st.write(f"連続練習スコア: {info.get('weighted2'):.2f}")
+            st.write(f"人数スコア: {info.get('weighted3'):.2f}")
     else:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 

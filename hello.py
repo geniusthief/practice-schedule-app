@@ -370,9 +370,6 @@ if run_button:
         df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
         st.subheader('割当表 (result シート)')
         st.dataframe(df)
-
-        if info.get('fallback'):
-            st.warning('⚠️ 最適化解が見つからなかったため、可用性に従った割当を表示しています。')
             
         with open(info['output_path'], 'rb') as f:
             data = f.read()
@@ -389,6 +386,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

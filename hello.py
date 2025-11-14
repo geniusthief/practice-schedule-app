@@ -47,38 +47,38 @@ with st.sidebar:
 def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 
     def diagnose_infeasibility(a, day_min, day_max, I, T, D):
-    messages = []
+        messages = []
 
-    # --- 1. 時間帯ごとの人数可能範囲チェック ---
-    for d in D:
-        for t in T:
-            available = sum(a[i, t, d] for i in I)
-            if available < day_min[d]:
-                messages.append(
-                    f"・【{d}曜の {t} 時】 → 利用可能人数 {available} 人 < 最小人数 {day_min[d]}（絶対に足りない）"
-                )
-            if available > day_max[d]:
-                messages.append(
-                    f"・【{d}曜の {t} 時】 → 利用可能人数 {available} 人 > 最大人数 {day_max[d]}（人数が多すぎる可能性）"
-                )
-
-    # --- 2. 個人の週3コマ制約チェック ---
-    for i in I:
-        total_available = 0
+        # --- 1. 時間帯ごとの人数可能範囲チェック ---
         for d in D:
             for t in T:
-                total_available += a[i, t, d]
-        if total_available < 3:
-            messages.append(
-                f"・部員 {i} → 可用性が週 {total_available} コマ（最低3コマ必要）"
-            )
+                available = sum(a[i, t, d] for i in I)
+                if available < day_min[d]:
+                    messages.append(
+                        f"・【{d}曜の {t} 時】 → 利用可能人数 {available} 人 < 最小人数 {day_min[d]}（絶対に足りない）"
+                    )
+                if available > day_max[d]:
+                    messages.append(
+                        f"・【{d}曜の {t} 時】 → 利用可能人数 {available} 人 > 最大人数 {day_max[d]}（人数が多すぎる可能性）"
+                    )
 
-    # --- 何も問題が見つからなければヒント ---
-    if not messages:
-        messages.append("制約が複雑に噛み合って infeasible の可能性があります。\n"
-                        "特に『連続ブロック』と『飛び飛び禁止』がネックになっている可能性があります。")
+        # --- 2. 個人の週3コマ制約チェック ---
+        for i in I:
+            total_available = 0
+            for d in D:
+                for t in T:
+                    total_available += a[i, t, d]
+            if total_available < 3:
+                messages.append(
+                    f"・部員 {i} → 可用性が週 {total_available} コマ（最低3コマ必要）"
+                )
 
-    return messages
+        # --- 何も問題が見つからなければヒント ---
+        if not messages:
+            messages.append("制約が複雑に噛み合って infeasible の可能性があります。\n"
+                            "特に『連続ブロック』と『飛び飛び禁止』がネックになっている可能性があります。")
+
+        return messages
 
     
     sheet_rt = book['r_time']
@@ -423,6 +423,7 @@ if run_button:
 
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

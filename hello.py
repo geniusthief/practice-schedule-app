@@ -296,6 +296,8 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     # --- 最適化成功なら通常出力 ---
     if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
         output_path = write_result_sheet(x_vars=x)
+        result_info['output_path'] = output_path
+        result_info['fallback'] = False  # 通常解
         
         # スコア計算
         score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
@@ -372,7 +374,10 @@ if run_button:
         df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
         st.subheader('割当表 (result シート)')
         st.dataframe(df)
-            
+
+        if info.get('fallback'):
+            st.warning('⚠️ 最適化解が見つからなかったため、可用性に従った割当を表示しています。')
+        
         with open(info['output_path'], 'rb') as f:
             data = f.read()
         st.download_button('結果（practice_result.xlsx）をダウンロード', data, file_name='practice_result.xlsx')
@@ -388,6 +393,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

@@ -305,6 +305,10 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     else:
         result_info['output_path'] = None
 
+    # 🔍 ★ここで診断関数をよぶ★
+    diag_messages = diagnose_infeasibility(a, day_min, day_max, I, T, D)
+    result_info['diagnosis'] = diag_messages
+    
     return result_info
 
 def diagnose_infeasibility(a, day_min, day_max, I, T, D):
@@ -421,6 +425,7 @@ if run_button:
 
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

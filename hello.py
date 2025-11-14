@@ -311,7 +311,9 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         })
     else:
         # --- fallback: 可用性通り出力 ---
-        output_path = write_result_sheet(x_vars=x, fallback=True)
+        fallback_path = write_result_sheet(x_vars=x, fallback=True)
+        result_info['output_path'] = fallback_path
+        result_info['fallback'] = True  # フラグを立てる
         
 
     return result_info
@@ -386,6 +388,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

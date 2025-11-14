@@ -218,7 +218,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     result_info = {"status": LpStatus[prob.status]}
 
     # 結果出力
-    if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
+    def write_result_sheet(x_vars, fallback=False):
         if 'result' in book.sheetnames:
             book.remove(book['result'])
         result_sheet = book.create_sheet('result')
@@ -229,8 +229,8 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions[cell.column_letter].width = 20
             
-        time_map = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
         display_rows = [1, 3, 5, 7]
+        time_map = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
         for i, t in enumerate(display_rows, start=2):
             cell = result_sheet.cell(row=i, column=1)
             cell.value = time_map[t]
@@ -250,12 +250,11 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         for d in D:
             for i in I:
                 name = names_list[i - 1]
-
                 # 部員 i がこの曜日 d に出る時間帯（奇数時のみ）
-                active_times = [
-                    t for t in display_rows
-                    if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5
-                ]
+                if fallback:
+                    active_times = [t for t in display_rows if a[i, t, d] >= 1]
+                else:
+                    active_times = [t for t in display_rows if x_vars[(i, t, d)].value() is not None and x_vars[(i, t, d)].value() >= 0.5]
 
                 if not active_times:
                     continue
@@ -291,7 +290,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
 
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         book.save(tmp.name)
-        result_info['output_path'] = tmp.name
+        return tmp.name
 
         # スコア計算
         score1 = sum(x[(i, r_time[i, d], d)].value() for i in I for d in D if r_time[i, d] is not None)
@@ -302,8 +301,13 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             'weighted1': w1 * score1, 'weighted2': w2 * score2, 'weighted3': w3 * score3,
             'total_score': w1 * score1 + w2 * score2 + w3 * score3
         })
+
+    # --- 最適化成功なら通常出力 ---
+    if LpStatus[prob.status] in ("Optimal", "Optimal Solution Found", "Optimal (or near optimal)"):
+        result_info['output_path'] = write_result_sheet(x_vars=x)
     else:
-        result_info['output_path'] = None
+        # --- fallback: 可用性通り出力 ---
+        result_info['output_path'] = write_result_sheet(x_vars=x, fallback=True)
 
     return result_info
 
@@ -349,7 +353,6 @@ if run_button:
     # ✅ 8) 変更を確実に反映させるため、一時保存＆再読み込み
     import tempfile
     tmp_rewrite = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-    st.write(clean_df.head())
     book.save(tmp_rewrite.name)
     book = load_workbook(tmp_rewrite.name)
 
@@ -376,3 +379,4 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+

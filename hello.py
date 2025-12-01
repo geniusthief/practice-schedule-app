@@ -108,7 +108,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
     # ideal / w_num
     ideal = {}
     w_num = {d: {} for d in D}
-    N_range = list(range(3, num_members + 1))
+    N_range = list(range(0, num_members + 1))
     for d in D:
         if day_chia[d] is not None:
             ideal[d] = 8
@@ -163,6 +163,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             if available < day_min[d]:
                 for i in I:
                     prob += x[i, t, d] == 0
+                prob += num_td[(t,d)] == 0
                 continue
             prob += num_td[(t, d)] == lpSum([x[i, t, d] for i in I])
             prob += num_td[(t, d)] >= day_min[d]
@@ -393,6 +394,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

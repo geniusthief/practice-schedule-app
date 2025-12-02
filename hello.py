@@ -376,6 +376,39 @@ if run_button:
         st.subheader('割当表 (result シート)')
         st.dataframe(df)
 
+        # --- 追加：元の時間割（13〜20時 × 火〜金）を部員名で表示 ---
+        st.subheader("元の時間割（13〜20時：部員名表示）")
+
+        # 表の行（13時〜20時）
+        full_times = list(range(13, 21))
+
+        # カラム（火〜金）
+        full_days = ["火", "水", "木", "金"]
+
+        # 空の表を作成
+        big_table = pd.DataFrame(index=full_times, columns=full_days)
+
+        # 部員名リスト（r_time の1列目）
+        member_names = edited_r_time.iloc[:, 0].tolist()
+
+        # 結果の x_{i,t,d} の値を整理して部員名を入れる
+        for i_idx, member in enumerate(member_names):
+            i = i_idx + 1
+            for d in range(1, 5):
+                for t in range(1, 9):
+                    # 13〜20時 → 1〜8 に対応
+                    hour = 12 + t
+                    val = x[(i, t, d)].value()
+                    if val is not None and val >= 0.5:
+                        day_label = ["火", "水", "木", "金"][d - 1]
+                        if big_table.loc[hour, day_label] is None:
+                            big_table.loc[hour, day_label] = member
+                        else:
+                            big_table.loc[hour, day_label] += ", " + member
+
+        st.dataframe(big_table)
+
+        
         if info.get('fallback'):
             st.warning('⚠️ 最適化解が見つからなかったため、可用性に従った割当を表示しています。')
         
@@ -394,6 +427,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

@@ -273,21 +273,21 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
                 cell.alignment = Alignment(wrap_text=True, horizontal='center')
                 cell.font = Font(size=12)
 
-        for i in I:
-            name = names_list[i - 1]  # ← edited_r_time の名前列から取得
-            for t in display_rows:  # ← 偶数時を除外
-                for d in D:
-                    if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5:
-                        row = 1 + display_rows.index(t) + 1  # 2限がrow=2, 3限がrow=3 ...
-                        col = 1 + d
-                        cell = result_sheet.cell(row=row, column=col)
-                        prev = cell.value if cell.value else ''
-                        names = prev.split(',') if prev else []
-                        if name not in names:
-                            names.append(name)
-                        cell.value = ",".join(names)
-                        cell.alignment = Alignment(wrap_text=True, horizontal='center')
-                        cell.font = Font(size=12)
+        # for i in I:
+        #     name = names_list[i - 1]  # ← edited_r_time の名前列から取得
+        #     for t in display_rows:  # ← 偶数時を除外
+        #         for d in D:
+        #             if x[(i, t, d)].value() is not None and x[(i, t, d)].value() >= 0.5:
+        #                 row = 1 + display_rows.index(t) + 1  # 2限がrow=2, 3限がrow=3 ...
+        #                 col = 1 + d
+        #                 cell = result_sheet.cell(row=row, column=col)
+        #                 prev = cell.value if cell.value else ''
+        #                 names = prev.split(',') if prev else []
+        #                 if name not in names:
+        #                     names.append(name)
+        #                 cell.value = ",".join(names)
+        #                 cell.alignment = Alignment(wrap_text=True, horizontal='center')
+        #                 cell.font = Font(size=12)
 
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
         book.save(tmp.name)
@@ -394,6 +394,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

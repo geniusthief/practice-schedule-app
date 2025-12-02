@@ -224,6 +224,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             book.remove(book['result'])
         result_sheet = book.create_sheet('result')
         weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
+        # ヘッダ
         for d in D:
             cell = result_sheet.cell(row=1, column=1 + d)
             cell.value = f"{weekday_map[d]}曜"
@@ -232,6 +233,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             
         display_rows = [1, 3, 5, 7]
         time_map = {1: "2限", 3: "3限", 5: "4限", 7: "5限"}
+        # 行ラベル
         for i, t in enumerate(display_rows, start=2):
             cell = result_sheet.cell(row=i, column=1)
             cell.value = time_map[t]
@@ -272,6 +274,43 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
                 cell.value = ",".join(names)
                 cell.alignment = Alignment(wrap_text=True, horizontal='center')
                 cell.font = Font(size=12)
+
+        # --- 全時間帯 t=1~8 の result_all シート ---
+        if 'result_all' in book.sheetnames:
+            book.remove(book['result_all'])
+        result_all_sheet = book.create_sheet('result_all')
+        # ヘッダ
+        for d in D:
+            cell = result_all_sheet.cell(row=1, column=1 + d)
+            cell.value = f"{weekday_map[d]}曜"
+            cell.alignment = Alignment(horizontal='center')
+            result_all_sheet.column_dimensions[cell.column_letter].width = 20
+        # 行ラベル：全時間帯
+        for t in T:
+            cell = result_all_sheet.cell(row=t+1, column=1)
+            cell.value = f"{12+t}時"  # または "t={t}" でもOK
+            cell.alignment = Alignment(horizontal='center')
+            result_all_sheet.column_dimensions['A'].width = 12
+
+        # 名前書き込み（全時間帯）
+        for d in D:
+            for i in I:
+                name = names_list[i-1]
+                if fallback:
+                    active_times = [t for t in T if a[i,t,d] >= 1]
+                else:
+                    active_times = [t for t in T if x_vars[(i,t,d)].value() is not None and x_vars[(i,t,d)].value() >= 0.5]
+                for t in active_times:
+                    row = t + 1
+                    col = 1 + d
+                    cell = result_all_sheet.cell(row=row, column=col)
+                    prev = cell.value if cell.value else ''
+                    names = prev.split(',') if prev else []
+                    if name not in names:
+                        names.append(name)
+                    cell.value = ",".join(names)
+                    cell.alignment = Alignment(wrap_text=True, horizontal='center')
+                    cell.font = Font(size=12)
 
         # for i in I:
         #     name = names_list[i - 1]  # ← edited_r_time の名前列から取得
@@ -374,10 +413,14 @@ if run_button:
     st.subheader('最適化結果')
     st.write('モデルステータス:', info.get('status'))
     if info.get('output_path'):
-        df = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
+        df_odd = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
         st.subheader('割当表 (result シート)')
-        st.dataframe(df)
+        st.dataframe(df_odd)
 
+        # 全時間帯シート
+        df_all = pd.read_excel(info['output_path'], sheet_name='result_all')
+        st.subheader('割当表（全時間帯）')
+        st.dataframe(df_all)
 
         
         if info.get('fallback'):
@@ -398,6 +441,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

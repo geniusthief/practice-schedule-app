@@ -378,6 +378,37 @@ if run_button:
         st.subheader('割当表 (result シート)')
         st.dataframe(df)
 
+        # --- 追加：元の時間割（13〜20時：部員名表示） ---
+        st.subheader("元の時間割（13〜20時：部員名表示）")
+
+        # 表（13〜20時 × 火〜金）
+        full_times = list(range(13, 21))
+        full_days = ["火", "水", "木", "金"]
+
+        big_table = pd.DataFrame(index=full_times, columns=full_days)
+
+        # x の決定変数
+        xv = info['x_vars']        # ← ここに x を保存している
+        labels = info['labels']    # ← 部員の名前リスト
+        T_model = info['T']        # ← モデルで使っている時間（例：1,3,5,7）
+        D_model = info['D']        # ← 曜日（1〜4）
+
+        for i_idx, member in enumerate(labels):
+            i = i_idx + 1
+            for d in D_model:
+                for t in T_model:
+                    hour = 12 + t  # t=1→13時、t=3→15時…
+                    val = xv[(i, t, d)].value()
+                    if val is not None and val >= 0.5:
+                        day_label = full_days[d - 1]
+
+                        if pd.isna(big_table.loc[hour, day_label]):
+                            big_table.loc[hour, day_label] = member
+                        else:
+                            big_table.loc[hour, day_label] += ", " + member
+
+        st.dataframe(big_table)
+
         
         if info.get('fallback'):
             st.warning('⚠️ 最適化解が見つからなかったため、可用性に従った割当を表示しています。')
@@ -397,6 +428,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

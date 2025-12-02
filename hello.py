@@ -414,7 +414,7 @@ if run_button:
     st.write('モデルステータス:', info.get('status'))
     if info.get('output_path'):
         df_odd = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
-        st.subheader('割当表 (result シート)')
+        st.subheader('割当表 (開始時間)')
         st.dataframe(df_odd)
 
         # 全時間帯シート
@@ -441,6 +441,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

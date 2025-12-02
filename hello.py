@@ -398,7 +398,7 @@ if run_button:
                 for t in range(1, 9):
                     # 13〜20時 → 1〜8 に対応
                     hour = 12 + t
-                    val = x[(i, t, d)].value()
+                    val = info['x_vars'][(i, t, d)].value()
                     if val is not None and val >= 0.5:
                         day_label = ["火", "水", "木", "金"][d - 1]
                         if big_table.loc[hour, day_label] is None:
@@ -427,6 +427,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

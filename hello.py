@@ -312,6 +312,9 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
             'weighted1': w1 * score1, 'weighted2': w2 * score2, 'weighted3': w3 * score3,
             'total_score': w1 * score1 + w2 * score2 + w3 * score3
         })
+        result_info['x_vars'] = x   # ← これが重要！
+        result_info['labels'] = labels  # 部員名リストも返す
+
     else:
         # --- fallback: 可用性通り出力 ---
         fallback_path = write_result_sheet(x_vars=x, fallback=True)
@@ -376,6 +379,37 @@ if run_button:
         st.subheader('割当表 (result シート)')
         st.dataframe(df)
 
+        # --- 追加：元の時間割（13〜20時：部員名表示） ---
+        st.subheader("元の時間割（13〜20時：部員名表示）")
+
+        # 表の行（13時〜20時）
+        full_times = list(range(13, 21))
+
+        # 表の列（火〜金）
+        full_days = ["火", "水", "木", "金"]
+
+        # 空の表
+        big_table = pd.DataFrame(index=full_times, columns=full_days)
+
+        # 情報
+        xv = info['x_vars']           # x変数
+        labels = info['labels']       # 部員名
+
+        # 割当データを big_table に入れる
+        for i_idx, member in enumerate(labels):
+            i = i_idx + 1
+            for d in range(1, 5):          # 火〜金
+                for t in range(1, 9):      # 13〜20時
+                    hour = 12 + t
+                    val = xv[(i, t, d)].value()
+                    if val is not None and val >= 0.5:
+                        day_label = full_days[d - 1]
+                        if pd.isna(big_table.loc[hour, day_label]):
+                            big_table.loc[hour, day_label] = member
+                        else:
+                            big_table.loc[hour, day_label] += ", " + member
+
+        st.dataframe(big_table)
         
         if info.get('fallback'):
             st.warning('⚠️ 最適化解が見つからなかったため、可用性に従った割当を表示しています。')
@@ -395,6 +429,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

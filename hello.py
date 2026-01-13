@@ -237,7 +237,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         # 行ラベル
         for i, t in enumerate(display_rows, start=2):
             cell = result_sheet.cell(row=i, column=1)
-            cell.value = time_map[t]
+            cell.value = '時限'
             cell.alignment = Alignment(horizontal='center')
             result_sheet.column_dimensions['A'].width = 12
         # for t in T:
@@ -442,6 +442,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

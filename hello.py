@@ -224,7 +224,7 @@ def run_optimization_from_workbook(book, cheer_days, w1, w2, w3):
         if 'result' in book.sheetnames:
             book.remove(book['result'])
         result_sheet = book.create_sheet('result')
-        weekday_map = {1: '火', 2: '水', 3: '木', 4: '金'}
+        weekday_map = {0: '時限', 1: '火', 2: '水', 3: '木', 4: '金'}
         # ヘッダ
         for d in D:
             cell = result_sheet.cell(row=1, column=1 + d)
@@ -442,6 +442,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 

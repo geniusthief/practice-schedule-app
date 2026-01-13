@@ -415,11 +415,13 @@ if run_button:
     st.write('モデルステータス:', info.get('status'))
     if info.get('output_path'):
         df_odd = pd.read_excel(info['output_path'], sheet_name='result', index_col=None)
+        df_odd = df_odd.rename(columns={"Unnamed: 0": "時限"})
         st.subheader('割当表 (開始時間)')
         st.dataframe(df_odd)
 
         # 全時間帯シート
         df_all = pd.read_excel(info['output_path'], sheet_name='result_all')
+        df_all = df_all.rename(columns={"Unnamed: 0": "時間"})
         st.subheader('割当表（全時間帯）')
         st.dataframe(df_all)
 
@@ -442,6 +444,7 @@ if run_button:
         st.error('実行可能な解が見つかりませんでした。')
 else:
     st.info('準備ができたら「最適化を実行」ボタンを押してください。')
+
 
 
 
